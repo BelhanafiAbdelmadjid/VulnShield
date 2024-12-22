@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+__pycache__/
+*.so
+
+# Environment variables and secrets
+.env
+*.env
+
+# Flask cache and session data
+instance/
+*.log
+
+# Virtual environment
+venv/
+ENV/
+env/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python egg metadata
+*.egg-info/
+.eggs/
+
+# Compiled static files
+app/static/css/*.css.map
+app/static/js/*.js.map
