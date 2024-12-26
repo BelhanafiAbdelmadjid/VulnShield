@@ -1,3 +1,5 @@
+creds
+
 # Byte-compiled / optimized / DLL files
 *.py[cod]
 __pycache__/
@@ -33,3 +35,6 @@ Thumbs.db
 # Compiled static files
 app/static/css/*.css.map
 app/static/js/*.js.map
+.env
+.env.development
+.env.production
