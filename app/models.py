@@ -25,7 +25,7 @@ class Vulnerability(db.Model):
     platform = db.Column(db.String(128), nullable=True)
     author = db.Column(db.String(128), nullable=True)
     severity = db.Column(db.String(64), nullable=True)
-    references = db.Column(db.Text, nullable=True)
+    references_list = db.Column(db.Text, nullable=True)
     cvss = db.Column(db.String(64), nullable=True)
     created = db.Column(db.DateTime, nullable=True)
     added = db.Column(db.DateTime, nullable=True)
@@ -46,8 +46,8 @@ class Vulnerability(db.Model):
     availability_impact = db.Column(db.String(64), nullable=True)
     affected_software = db.Column(db.Text, nullable=True)
     tags = db.Column(db.String(256), nullable=True)
-    screenshot_path = db.Column(db.String(256), nullable=True)
-    screenshot_thumb_path = db.Column(db.String(256), nullable=True)
+    # screenshot_path = db.Column(db.String(256), nullable=True)
+    # screenshot_thumb_path = db.Column(db.String(256), nullable=True)
     status = db.Column(db.String(64), default='brut')
 
 class Subscription(db.Model):

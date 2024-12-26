@@ -4,6 +4,7 @@ from flask_migrate import Migrate
 from flask_mail import Mail
 from flask_login import LoginManager
 from flask_admin import Admin
+from flask_restful import Api
 from flask_admin.contrib.sqla import ModelView
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -14,6 +15,7 @@ mail = Mail()
 login_manager = LoginManager()
 admin = Admin(name='Vulnerability Monitor', template_mode='bootstrap3')
 scheduler = BackgroundScheduler()
+api = Api()
 
 def create_app():
     app = Flask(__name__)
@@ -24,6 +26,7 @@ def create_app():
     mail.init_app(app)
     login_manager.init_app(app)
     admin.init_app(app)
+    api.init_app(app)
 
     from .models import User, Vulnerability, Subscription
     from .routes import main
