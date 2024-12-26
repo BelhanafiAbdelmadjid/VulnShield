@@ -1,0 +1,71 @@
+from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask_login import login_user, logout_user, login_required, current_user
+from .forms import LoginForm, SubscriptionForm
+from .models import User, Vulnerability, Subscription
+from . import db
+
+main = Blueprint('main', __name__)
+
+@main.route('/')
+def index():
+    page = request.args.get('page', 1, type=int)
+    vulnerabilities = Vulnerability.query.paginate(page=page, per_page=10)
+    return render_template('index.html', vulnerabilities=vulnerabilities)
+
+@main.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user)
+            return redirect(url_for('main.dashboard'))
+        else:
+            flash('Invalid email or password', 'danger')
+    return render_template('login.html', form=form)
+
+@main.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('main.index'))
+
+@main.route('/dashboard')
+@login_required
+def dashboard():
+    if current_user.role == "admin" : 
+        vulnerabilities = Vulnerability.query.all()
+    elif current_user.role == 'scraper':
+        vulnerabilities = Vulnerability.query.filter_by(status='pending').all()
+    elif current_user.role == 'text_processor':
+        vulnerabilities = Vulnerability.query.filter_by(status='scraped').all()
+    elif current_user.role == 'analyst':
+        vulnerabilities = Vulnerability.query.filter_by(status='processed').all()
+    else:
+        vulnerabilities = []
+    return render_template('dashboard.html', vulnerabilities=vulnerabilities)
+
+@main.route('/subscribe', methods=['GET', 'POST'])
+def subscribe():
+    form = SubscriptionForm()
+    if form.validate_on_submit():
+        subscription = Subscription(email=form.email.data, cve_types=','.join(form.cve_types.data))
+        db.session.add(subscription)
+        db.session.commit()
+        flash('Subscription successful!', 'success')
+        return redirect(url_for('main.index'))
+    return render_template('subscribe.html', form=form)
+
+@main.route('/validate/<int:vulnerability_id>', methods=['POST'])
+@login_required
+def validate_vulnerability(vulnerability_id):
+    vulnerability = Vulnerability.query.get_or_404(vulnerability_id)
+    if current_user.role == 'scraper' and vulnerability.status == 'pending':
+        vulnerability.status = 'scraped'
+    elif current_user.role == 'text_processor' and vulnerability.status == 'scraped':
+        vulnerability.status = 'processed'
+    elif current_user.role == 'analyst' and vulnerability.status == 'processed':
+        vulnerability.status = 'validated'
+    db.session.commit()
+    flash('Vulnerability validated!', 'success')
+    return redirect(url_for('main.dashboard'))
