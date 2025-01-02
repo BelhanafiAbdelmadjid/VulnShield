@@ -13,6 +13,7 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+   
 
 class Vulnerability(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -25,7 +26,7 @@ class Vulnerability(db.Model):
     platform = db.Column(db.String(128), nullable=True)
     author = db.Column(db.String(128), nullable=True)
     severity = db.Column(db.String(64), nullable=True)
-    references_list = db.Column(db.Text, nullable=True)
+    references = db.Column(db.Text, nullable=True)
     cvss = db.Column(db.String(64), nullable=True)
     created = db.Column(db.DateTime, nullable=True)
     added = db.Column(db.DateTime, nullable=True)
@@ -45,12 +46,54 @@ class Vulnerability(db.Model):
     integrity_impact = db.Column(db.String(64), nullable=True)
     availability_impact = db.Column(db.String(64), nullable=True)
     affected_software = db.Column(db.Text, nullable=True)
-    tags = db.Column(db.String(256), nullable=True)
+    tags = db.Column(db.String(1024), nullable=True)
     # screenshot_path = db.Column(db.String(256), nullable=True)
     # screenshot_thumb_path = db.Column(db.String(256), nullable=True)
     status = db.Column(db.String(64), default='brut')
+
+    def to_dict(self):
+        return {
+            "CVE_ID": self.cve_id,
+            "Titre": self.titre,
+            "Description": self.description,
+            "Date_Published": self.date_published.isoformat() if self.date_published else None,
+            "Last_Modified": self.last_modified.isoformat() if self.last_modified else None,
+            "Type": self.type,
+            "Platform": self.platform,
+            "Author": self.author,
+            "Severity": self.severity,
+            "References": self.references,
+            "CVSS": self.cvss,
+            "Created": self.created.isoformat() if self.created else None,
+            "Added": self.added.isoformat() if self.added else None,
+            "Solutions": self.solutions,
+            "verified": self.verified,
+            "application_path": self.application_path,
+            "application_md5": self.application_md5,
+            "Base_Score": self.base_score,
+            "Attack_Vector": self.attack_vector,
+            "Attack_Complexity": self.attack_complexity,
+            "Privileges_Required": self.privileges_required,
+            "User_Interaction": self.user_interaction,
+            "Scope": self.scope,
+            "Exploitability_Score": self.exploitability_score,
+            "Impact_Score": self.impact_score,
+            "Confidentiality_Impact": self.confidentiality_impact,
+            "Integrity_Impact": self.integrity_impact,
+            "Availability_Impact": self.availability_impact,
+            "Affected_Software": self.affected_software,
+            "tags": self.tags,
+            "status": self.status
+        }
+
 
 class Subscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(128), unique=True, nullable=False)
     cve_types = db.Column(db.String(256), nullable=False)
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "cve_types": self.cve_types,
+        }

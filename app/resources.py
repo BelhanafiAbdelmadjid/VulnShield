@@ -1,7 +1,14 @@
 from flask_restful import Resource, reqparse, fields, marshal_with
 from flask_login import login_required, current_user , login_user, logout_user
+from flask import session
 from .models import User, Vulnerability, Subscription
 from . import db
+
+import json
+from sqlalchemy.exc import IntegrityError
+# from .utils import welcome_email,unsubscribed_email
+
+import threading
 
 
 login_parser = reqparse.RequestParser()
@@ -10,10 +17,14 @@ login_parser.add_argument('password', type=str, required=True)
 
 class LoginResource(Resource):
     def post(self):
-        args = login_parser.parse_args()
+        parser = reqparse.RequestParser()
+        parser.add_argument('email', type=str, required=True)
+        parser.add_argument('password', type=str, required=True)
+        args = parser.parse_args()
         user = User.query.filter_by(email=args['email']).first()
         if user and user.check_password(args['password']):
             login_user(user)
+            session['role'] = user.role  # Stocker le rôle dans la session
             return {'message': 'Login successful'}, 200
         else:
             return {'message': 'Invalid email or password'}, 401
@@ -23,6 +34,7 @@ class LogoutResource(Resource):
     def post(self):
         logout_user()
         return {'message': 'Logout successful'}, 200
+
 
 
 user_fields = {
@@ -86,51 +98,11 @@ class VulnerabilityResource(Resource):
         vulnerability = Vulnerability.query.get_or_404(vulnerability_id)
         return vulnerability
 
-    # @login_required
-    # def post(self):
-    #     parser = reqparse.RequestParser()
-    #     parser.add_argument('cve_id', type=str, required=True)
-    #     parser.add_argument('titre', type=str)
-    #     parser.add_argument('description', type=str, required=True)
-    #     parser.add_argument('date_published', type=str)
-    #     parser.add_argument('last_modified', type=str)
-    #     parser.add_argument('type', type=str)
-    #     parser.add_argument('platform', type=str)
-    #     parser.add_argument('author', type=str)
-    #     parser.add_argument('severity', type=str)
-    #     parser.add_argument('references_list', type=str)
-    #     parser.add_argument('cvss', type=str)
-    #     parser.add_argument('created', type=str)
-    #     parser.add_argument('added', type=str)
-    #     parser.add_argument('solutions', type=str)
-    #     parser.add_argument('verified', type=bool)
-    #     parser.add_argument('application_path', type=str)
-    #     parser.add_argument('application_md5', type=str)
-    #     parser.add_argument('base_score', type=float)
-    #     parser.add_argument('attack_vector', type=str)
-    #     parser.add_argument('attack_complexity', type=str)
-    #     parser.add_argument('privileges_required', type=str)
-    #     parser.add_argument('user_interaction', type=str)
-    #     parser.add_argument('scope', type=str)
-    #     parser.add_argument('exploitability_score', type=float)
-    #     parser.add_argument('impact_score', type=float)
-    #     parser.add_argument('confidentiality_impact', type=str)
-    #     parser.add_argument('integrity_impact', type=str)
-    #     parser.add_argument('availability_impact', type=str)
-    #     parser.add_argument('affected_software', type=str)
-    #     parser.add_argument('tags', type=str)
-    #     parser.add_argument('screenshot_path', type=str)
-    #     parser.add_argument('screenshot_thumb_path', type=str)
-    #     parser.add_argument('status', type=str)
-    #     args = parser.parse_args()
-
-    #     vulnerability = Vulnerability(**args)
-    #     db.session.add(vulnerability)
-    #     db.session.commit()
-    #     return vulnerability, 201
-
     @login_required
     def put(self, vulnerability_id):
+        if session.get('role') != 'text_processor':
+            return {'message': 'Unauthorized'}, 403
+
         parser = reqparse.RequestParser()
         parser.add_argument('cve_id', type=str)
         parser.add_argument('titre', type=str)
@@ -162,8 +134,6 @@ class VulnerabilityResource(Resource):
         parser.add_argument('availability_impact', type=str)
         parser.add_argument('affected_software', type=str)
         parser.add_argument('tags', type=str)
-        parser.add_argument('screenshot_path', type=str)
-        parser.add_argument('screenshot_thumb_path', type=str)
         parser.add_argument('status', type=str)
         args = parser.parse_args()
 
@@ -176,10 +146,14 @@ class VulnerabilityResource(Resource):
 
     @login_required
     def delete(self, vulnerability_id):
+        if session.get('role') != 'admin':
+            return {'message': 'Unauthorized'}, 403
+
         vulnerability = Vulnerability.query.get_or_404(vulnerability_id)
         db.session.delete(vulnerability)
         db.session.commit()
         return '', 204
+
 
 class VulnerabilityListResource(Resource):
     @marshal_with(vulnerability_fields)
@@ -193,17 +167,27 @@ class SubscriptionResource(Resource):
         subscription = Subscription.query.get_or_404(subscription_id)
         return subscription
 
-    @login_required
     def post(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('email', type=str, required=True)
-        parser.add_argument('cve_types', type=str, required=True)
-        args = parser.parse_args()
+        try :
+            parser = reqparse.RequestParser()
+            parser.add_argument('email', type=str, required=True)
+            parser.add_argument('cve_types', type=str, required=True)
+            args = parser.parse_args()
 
-        subscription = Subscription(email=args['email'], cve_types=args['cve_types'])
-        db.session.add(subscription)
-        db.session.commit()
-        return subscription, 201
+            subscription = Subscription(email=args['email'], cve_types=args['cve_types'])
+            session["subscription"] = subscription.id
+            db.session.add(subscription)
+            db.session.commit()
+
+            
+            threading.Thread(target=mailing.welcome_email, args=(args['email'],)).start()
+            return subscription.to_dict(), 201
+        except IntegrityError  :
+            return 'Email already subscribed.', 403
+        except Exception as e:
+            # Log the error for debugging purposes
+            print(f"Internal Server Error: {e}")
+            return 'Internal Server Error', 500
 
     @login_required
     def put(self, subscription_id):
@@ -218,16 +202,56 @@ class SubscriptionResource(Resource):
                 setattr(subscription, key, value)
         db.session.commit()
         return subscription, 200
+    
+    def put(self):
+        sub = session.get("subscription")
+        if sub:
+            parser = reqparse.RequestParser()
+            parser.add_argument('email', type=str)
+            parser.add_argument('cve_types', type=str)
+            args = parser.parse_args()
 
-    @login_required
-    def delete(self, subscription_id):
+            subscription = Subscription.query.get_or_404(sub['id'])
+            for key, value in args.items():
+                if value is not None:
+                    setattr(subscription, key, value)
+            db.session.commit()
+            return subscription, 200
+        else:
+            return {'message': 'Unauthorized'}, 401
+
+    
+    # @login_required
+    # def delete(self):
+    #     sub = session.get("subscription")
+    #     if sub:
+    #         subscription = Subscription.query.get_or_404(sub['id'])
+    #         db.session.delete(subscription)
+    #         db.session.commit()
+    #         threading.Thread(target=unsubscribed_email, args=(subscription.email,)).start()
+    #         return '', 204
+    #     else:
+    #          return {'message': 'Please unsubscribe from the email we sent you.'}, 404
+
+    def delete(self,subscription_id):
         subscription = Subscription.query.get_or_404(subscription_id)
         db.session.delete(subscription)
         db.session.commit()
+        threading.Thread(target=unsubscribed_email, args=(subscription.email,)).start()
         return '', 204
+
+
 
 class SubscriptionListResource(Resource):
     @marshal_with(subscription_fields)
     def get(self):
         subscriptions = Subscription.query.all()
         return subscriptions, 200
+
+class AdminListResource(Resource):
+    @marshal_with(user_fields)
+    def get(self):
+        if session.get('role') != 'admin':
+            return {'message': 'Unauthorized'}, 403
+        admins = User.query.filter_by(role='admin').all()
+        return admins, 200

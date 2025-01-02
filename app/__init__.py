@@ -7,6 +7,10 @@ from flask_admin import Admin
 from flask_restful import Api
 from flask_admin.contrib.sqla import ModelView
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger 
+from .utils.Mail import Mailing
+
+
 
 
 db = SQLAlchemy()
@@ -14,8 +18,11 @@ migrate = Migrate()
 mail = Mail()
 login_manager = LoginManager()
 admin = Admin(name='Vulnerability Monitor', template_mode='bootstrap3')
-scheduler = BackgroundScheduler()
 api = Api()
+mailing = Mailing()
+
+scheduler = BackgroundScheduler()
+from .scheduler import send_weekly_cve_emails
 
 def create_app():
     app = Flask(__name__)
@@ -28,6 +35,8 @@ def create_app():
     admin.init_app(app)
     api.init_app(app)
 
+    
+
     from .models import User, Vulnerability, Subscription
     from .routes import main
 
@@ -37,11 +46,27 @@ def create_app():
 
     app.register_blueprint(main)
 
-    with app.app_context():
-        from .tasks import scrape_vulnerabilities,send_daily_alerts
-        scheduler.add_job(scrape_vulnerabilities, 'interval', hours=1)
-        # scheduler.add_job(send_daily_alerts, 'interval', hours=1)
-        scheduler.start()
+    # with app.app_context():
+    scheduler = BackgroundScheduler()
+    
+    scheduler.add_job(send_weekly_cve_emails, IntervalTrigger(minutes=60), args=[app,mailing])
+
+    from .utils.VeilleAuto import veille
+    from .models import Vulnerability
+    scheduler.add_job(
+        func=veille,
+        # trigger=IntervalTrigger(hours=12),
+        trigger=IntervalTrigger(hours=12),
+        id='scrape_sources',
+        replace_existing=True,
+        coalesce=True,  # Prevent overlapping executions
+        max_instances=1,
+        args=[app,Vulnerability]
+    )
+
+    scheduler.start()
+
+    veille(app,Vulnerability)
         
     @login_manager.user_loader
     def load_user(user_id):

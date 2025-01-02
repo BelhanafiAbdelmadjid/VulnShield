@@ -1,17 +1,27 @@
 from flask import Blueprint
 from flask_restful import Api
-from .resources import  VulnerabilityResource, VulnerabilityListResource, SubscriptionResource, SubscriptionListResource,LoginResource,LogoutResource
+from .resources import  VulnerabilityResource, VulnerabilityListResource, SubscriptionResource, SubscriptionListResource,LoginResource,LogoutResource,AdminListResource
 
 main = Blueprint('main', __name__)
 api = Api(main)
 
 # api.add_resource(UserResource, '/users/<int:user_id>')
-api.add_resource(VulnerabilityResource, '/vulnerabilities/<int:vulnerability_id>', '/vulnerabilities')
-api.add_resource(VulnerabilityListResource, '/vulnerabilities')
-api.add_resource(SubscriptionResource, '/subscriptions/<int:subscription_id>', '/subscriptions')
-api.add_resource(SubscriptionListResource, '/subscriptions')
-api.add_resource(LoginResource, '/login')
-api.add_resource(LogoutResource, '/logout')
+
+# ------------------------ Vulnerabilities management ------------------------ #
+api.add_resource(VulnerabilityResource, '/vulnerabilities/<int:vulnerability_id>', endpoint='vulnerability', methods=['GET', 'PUT', 'DELETE'])
+api.add_resource(VulnerabilityListResource, '/vulnerabilities', endpoint='vulnerabilities', methods=['GET'])
+
+# ------------------------------- Subscriptions ------------------------------ #
+api.add_resource(SubscriptionResource, '/subscriptions/<int:subscription_id>', endpoint='subscription', methods=['GET', 'PUT', 'DELETE'])
+api.add_resource(SubscriptionResource, '/subscriptions', endpoint='subscriptions_post', methods=['POST'])
+api.add_resource(SubscriptionListResource, '/subscriptions', endpoint='subscriptions', methods=['GET'])
+
+# ----------------------------------- Auth ----------------------------------- #
+api.add_resource(LoginResource, '/login', endpoint='login', methods=['POST'])
+api.add_resource(LogoutResource, '/logout', endpoint='logout', methods=['POST'])
+
+# ----------------------------------- Admin ----------------------------------- #
+api.add_resource(AdminListResource, '/admins', endpoint='admins', methods=['GET'])
 
 # from flask import Blueprint, render_template, redirect, url_for, flash, request
 # from flask_login import login_user, logout_user, login_required, current_user
