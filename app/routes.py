@@ -1,6 +1,6 @@
-from flask import Blueprint
+from flask import Blueprint,render_template
 from flask_restful import Api
-from .resources import  VulnerabilityResource, VulnerabilityListResource, SubscriptionResource, SubscriptionListResource,LoginResource,LogoutResource,AdminListResource
+from .resources import CveTypesResource, GraphDataResource,RandomVulnerabilitiesResource,VulnerabilityResource, VulnerabilityListResource, SubscriptionResource, SubscriptionListResource,LoginResource,LogoutResource,AdminListResource,VulnerabilityRejectResource,VulnerabilityDiscoverResource
 
 main = Blueprint('main', __name__)
 api = Api(main)
@@ -8,8 +8,13 @@ api = Api(main)
 # api.add_resource(UserResource, '/users/<int:user_id>')
 
 # ------------------------ Vulnerabilities management ------------------------ #
-api.add_resource(VulnerabilityResource, '/vulnerabilities/<int:vulnerability_id>', endpoint='vulnerability', methods=['GET', 'PUT', 'DELETE'])
+api.add_resource(VulnerabilityResource, '/vulnerability/<int:vulnerability_id>', endpoint='vulnerability', methods=['GET', 'PUT', 'DELETE'])
+api.add_resource(VulnerabilityRejectResource, '/vulnerability/<int:vulnerability_id>/reject/', endpoint='vulnerability_rejection', methods=['PUT'])
 api.add_resource(VulnerabilityListResource, '/vulnerabilities', endpoint='vulnerabilities', methods=['GET'])
+api.add_resource(VulnerabilityDiscoverResource, '/discover', endpoint='discover', methods=['GET'])
+api.add_resource(RandomVulnerabilitiesResource, '/discover/random', endpoint='discover-random', methods=['GET'])
+api.add_resource(GraphDataResource, '/graph', endpoint='graph-data', methods=['GET'])
+api.add_resource(CveTypesResource, '/cves/types', endpoint='types', methods=['GET'])
 
 # ------------------------------- Subscriptions ------------------------------ #
 api.add_resource(SubscriptionResource, '/subscriptions/<int:subscription_id>', endpoint='subscription', methods=['GET', 'PUT', 'DELETE'])
@@ -31,11 +36,9 @@ api.add_resource(AdminListResource, '/admins', endpoint='admins', methods=['GET'
 
 # main = Blueprint('main', __name__)
 
-# @main.route('/')
-# def index():
-#     page = request.args.get('page', 1, type=int)
-#     vulnerabilities = Vulnerability.query.paginate(page=page, per_page=10)
-#     return render_template('index.html', vulnerabilities=vulnerabilities)
+@main.route('/')
+def index():
+    return render_template('index.html')
 
 # @main.route('/login', methods=['GET', 'POST'])
 # def login():

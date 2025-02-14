@@ -22,8 +22,9 @@ class Mailing :
         if not protonmail_username or not protonmail_password:
             raise ValueError("ProtonMail credentials are not set in environment variables.")
         # Initialize the ProtonMail API client
-        self.client = ProtonMail()
-        self.client.login(protonmail_username, protonmail_password)
+        if os.getenv("LOAD_MAIL") == "yes" :
+            self.client = ProtonMail()
+            self.client.login(protonmail_username, protonmail_password)
     def send_email(self,to_email, template, subject):
         # Load your ProtonMail credentials from environment variables
 
@@ -40,7 +41,7 @@ class Mailing :
             print(f"Email sent successfully to {to_email}")
         except Exception as e:
             print(f"Failed to send email: {e}")
-    def welcome_email(self,to_email,subject="Welcome to EyeSpy"):
+    def welcome_email(self,to_email,subject="Welcome to VulnShield"):
         # Define the welcome email subject and body
         body = f"""
         <html>
@@ -84,14 +85,14 @@ class Mailing :
         </head>
         <body>
             <div class="container">
-                <h1>Welcome to EyeSpy, {remove_domain(to_email)}!</h1>
-                <p>We're thrilled to have you join the EyeSpy community! Your journey with us is just beginning, and we're excited to help you get the most out of our platform.</p>
+                <h1>Welcome to VulnShield, {remove_domain(to_email)}!</h1>
+                <p>We're thrilled to have you join the VulnShield community! Your journey with us is just beginning, and we're excited to help you get the most out of our platform.</p>
 
                 <h2>Getting Started</h2>
                 <p>To help you get started, here are a few tips and resources:</p>
                 <ol>
                     <li><strong>Explore Our Features</strong>: Check out our <a href="#">Getting Started Guide</a> to learn about all the features and tools available to you.</li>
-                    <li><strong>Customize Your Experience</strong>: Personalize your settings to make EyeSpy work best for you.</li>
+                    <li><strong>Customize Your Experience</strong>: Personalize your settings to make VulnShield work best for you.</li>
                     <li><strong>Join the Community</strong>: Connect with other users in our <a href="#">Community Forum</a> to share tips, ask questions, and get support.</li>
                 </ol>
 
@@ -105,9 +106,9 @@ class Mailing :
                 <h2>We'd Love to Hear from You</h2>
                 <p>Your feedback is incredibly important to us. If you have any suggestions, questions, or just want to say hi, please don't hesitate to contact us at <a href="mailto:{os.getenv('PROTONMAIL_USERNAME')}">{os.getenv('PROTONMAIL_USERNAME')}</a>.</p>
 
-                <p>Thank you for choosing EyeSpy. We can't wait to see what you'll achieve with us!</p>
+                <p>Thank you for choosing VulnShield. We can't wait to see what you'll achieve with us!</p>
 
-                <p class="footer">Best regards,<br>EyeSpy Team</p>
+                <p class="footer">Best regards,<br>VulnShield Team</p>
             </div>
         </body>
         </html>
@@ -160,22 +161,22 @@ class Mailing :
         <body>
             <div class="container">
                 <h1>We're Sorry to See You Go, {remove_domain(to_email)}!</h1>
-                <p>We're sad to see you unsubscribe from EyeSpy. We hope you found value in our services and we'd love to have you back anytime.</p>
+                <p>We're sad to see you unsubscribe from VulnShield. We hope you found value in our services and we'd love to have you back anytime.</p>
 
                 <h2>Why We'd Love to Have You Back</h2>
                 <p>Here are a few reasons why you might want to reconsider:</p>
                 <ul>
                     <li><strong>Exclusive Content</strong>: We regularly update our platform with new features and exclusive content that you won't find anywhere else.</li>
                     <li><strong>Community Support</strong>: Our community is always here to help. Whether you have questions or just want to share your experiences, you'll find a supportive group of users.</li>
-                    <li><strong>Personalized Experience</strong>: We offer a range of customization options to make EyeSpy work best for you. From personalized settings to tailored recommendations, we strive to provide a unique experience for every user.</li>
+                    <li><strong>Personalized Experience</strong>: We offer a range of customization options to make VulnShield work best for you. From personalized settings to tailored recommendations, we strive to provide a unique experience for every user.</li>
                 </ul>
 
                 <h2>We Value Your Feedback</h2>
-                <p>Your feedback is incredibly important to us. If there's anything we can do to improve our services or if you have any suggestions, please let us know. We're always looking for ways to make EyeSpy better for our users.</p>
+                <p>Your feedback is incredibly important to us. If there's anything we can do to improve our services or if you have any suggestions, please let us know. We're always looking for ways to make VulnShield better for our users.</p>
 
-                <p>If you ever decide to come back, we'll be here waiting with open arms. Thank you for being a part of the EyeSpy community, and we hope to see you again soon!</p>
+                <p>If you ever decide to come back, we'll be here waiting with open arms. Thank you for being a part of the VulnShield community, and we hope to see you again soon!</p>
 
-                <p class="footer">Best regards,<br>EyeSpy Team</p>
+                <p class="footer">Best regards,<br>VulnShield Team</p>
             </div>
         </body>
         </html>
@@ -183,7 +184,7 @@ class Mailing :
 
         # Call the send_email function to send the unsubscribed email
         self.send_email([to_email],  body,subject)
-    def weekly_cve_email(self,to_email,sub_id, cve_list,subject = "Your Weekly CVE Update from EyeSpy"):
+    def weekly_cve_email(self,to_email,sub_id, cve_list,subject = "Your Weekly CVE Update from VulnShield"):
         # Define the weekly CVE email subject and body
         
         body = f"""
@@ -247,8 +248,8 @@ class Mailing :
 
         body += f"""
                 </ul>
-                <p>Thank you for being a part of the EyeSpy community. We hope you find these updates helpful!</p>
-                <p class="footer">Best regards,<br>EyeSpy Team</p>
+                <p>Thank you for being a part of the VulnShield community. We hope you find these updates helpful!</p>
+                <p class="footer">Best regards,<br>VulnShield Team</p>
             </div>
         </body>
         </html>

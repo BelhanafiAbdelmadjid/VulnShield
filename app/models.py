@@ -53,6 +53,7 @@ class Vulnerability(db.Model):
 
     def to_dict(self):
         return {
+            "id" : self.id,
             "CVE_ID": self.cve_id,
             "Titre": self.titre,
             "Description": self.description,

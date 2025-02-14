@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_mail import Mail
+# from flask_mail import Mail
 from flask_login import LoginManager
 from flask_admin import Admin
 from flask_restful import Api
@@ -15,7 +15,7 @@ from .utils.Mail import Mailing
 
 db = SQLAlchemy()
 migrate = Migrate()
-mail = Mail()
+# mail = Mail()
 login_manager = LoginManager()
 admin = Admin(name='Vulnerability Monitor', template_mode='bootstrap3')
 api = Api()
@@ -30,7 +30,7 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
-    mail.init_app(app)
+    # mail.init_app(app)
     login_manager.init_app(app)
     admin.init_app(app)
     api.init_app(app)
@@ -49,7 +49,7 @@ def create_app():
     # with app.app_context():
     scheduler = BackgroundScheduler()
     
-    scheduler.add_job(send_weekly_cve_emails, IntervalTrigger(minutes=60), args=[app,mailing])
+    scheduler.add_job(send_weekly_cve_emails, IntervalTrigger(hours=72), args=[app,mailing])
 
     from .utils.VeilleAuto import veille
     from .models import Vulnerability
@@ -66,11 +66,14 @@ def create_app():
 
     scheduler.start()
 
-    veille(app,Vulnerability)
+    # veille(app,Vulnerability)
         
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
+
+
+    # create_admin_user(app)
 
 
     return app
@@ -78,9 +81,9 @@ def create_app():
 def create_admin_user(app):
     from .models import User
     with app.app_context():
-        admin_email = 'belhanafiabdelmadjid@gmail.com'
-        admin_password = 'adminpassword'
-        admin_role = 'admin'
+        admin_email = 'madjidlethug0@gmail.com'
+        admin_password = 'password'
+        admin_role = 'super-admin'
 
         if not User.query.filter_by(email=admin_email).first():
             admin_user = User(email=admin_email, role=admin_role)

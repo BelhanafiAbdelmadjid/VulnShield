@@ -38,4 +38,3 @@ app/static/js/*.js.map
 .env
 .env.development
 .env.production
-TODO
